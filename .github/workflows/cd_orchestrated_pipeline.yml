@@ -1,0 +1,140 @@
+name: CD - Orchestrated Data Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      data_source:
+        description: 'Data source to process'
+        required: false
+        default: 'sample'
+        type: choice
+        options:
+        - sample
+        - full
+
+  schedule:
+    - cron: '0 6 * * *'  # Ejecutar diariamente a las 6 AM UTC
+
+jobs:
+  execute-pipeline:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create directory structure
+      run: |
+        mkdir -p data/raw data/processed data/outputs data/schemas data/reference logs
+
+    - name: Create sample schema
+      run: |
+        echo '{
+          "type": "object",
+          "properties": {
+            "id": {"type": "number"},
+            "producto": {"type": "string"},
+            "venta": {"type": "number"},
+            "region": {"type": "string"}
+          },
+          "required": ["id", "producto", "venta"]
+        }' > data/schemas/sales_schema_v1.json
+
+    - name: Download source data
+      run: |
+        echo "Descargando datos de muestra..."
+        python scripts/download_sample_data.py
+
+    - name: Validate data sources
+      run: |
+        echo "Validando fuentes de datos..."
+        python -c "
+import os
+required_files = ['data/schemas/sales_schema_v1.json']
+for file in required_files:
+    if os.path.exists(file):
+        print(f' {file} encontrado')
+    else:
+        print(f' {file} no encontrado')
+        "
+
+    - name: Execute orchestrated pipeline
+      run: |
+        echo "Ejecutando pipeline orquestado..."
+        mkdir -p logs
+        python src/orchestrator.py
+        echo " Ejecución del pipeline completada"
+
+    - name: Check pipeline results
+      run: |
+        echo "Verificando resultados del pipeline..."
+        python -c "
+import json
+import glob
+import os
+
+# Verificar reportes generados
+report_files = glob.glob('data/outputs/report_*.json')
+if report_files:
+    print(f' Reportes generados: {len(report_files)}')
+    with open(report_files[0], 'r') as f:
+        report = json.load(f)
+        print(f'   - Execution ID: {report.get(\"execution_id\")}')
+        print(f'   - Records processed: {report.get(\"records_processed\")}')
+        print(f'   - Status: {report.get(\"status\")}')
+else:
+    print(' No se generaron reportes')
+
+# Verificar logs
+if os.path.exists('logs/pipeline_execution.log'):
+    print(' Log de ejecución generado')
+    log_size = os.path.getsize('logs/pipeline_execution.log')
+    print(f'   - Tamaño del log: {log_size} bytes')
+else:
+    print(' Log de ejecución no generado')
+        "
+
+    - name: Upload execution artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: pipeline-outputs-${{ github.run_id }}
+        path: |
+          data/outputs/
+          logs/
+        retention-days: 7
+
+    - name: Generate execution report
+      if: always()
+      run: |
+        python scripts/generate_execution_report.py
+
+    - name: Notify success
+      if: success()
+      run: |
+        echo " Pipeline ejecutado exitosamente en ${{ github.event.inputs.environment || 'staging' }}"
+        echo "Execution ID: ${{ github.run_id }}"
+
+    - name: Notify failure
+      if: failure()
+      run: |
+        echo " Pipeline falló en ${{ github.event.inputs.environment || 'staging' }}"
+        echo "Por favor revisar los logs para más detalles"

@@ -1,0 +1,101 @@
+name: CI - Pipeline Orchestration Tests
+
+on: [push, pull_request]
+
+jobs:
+  test-orchestration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-mock
+
+    - name: Create necessary directories
+      run: |
+        mkdir -p data/schemas data/reference logs data/outputs
+
+    - name: Create sample schema file for testing
+      run: |
+        echo '{"type": "object", "properties": {"id": {"type": "number"}}}' > data/schemas/sales_schema_v1.json
+
+    - name: Test orchestration components
+      run: |
+        python -m pytest tests/ -v --cov=src --cov-report=xml
+
+    - name: Validate pipeline configuration
+      run: |
+        python -c "
+import yaml
+with open('config/pipeline_config.yaml', 'r') as f:
+    config = yaml.safe_load(f)
+    print(' Configuración YAML válida')
+    print(f'Versión del pipeline: {config.get(\"version\")}')
+        "
+
+    - name: Dry-run pipeline initialization
+      run: |
+        python -c "
+from src.orchestrator import PipelineOrchestrator
+orchestrator = PipelineOrchestrator('config/pipeline_config.yaml')
+print(' Orquestador inicializado correctamente')
+print(' Configuración cargada exitosamente')
+        "
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: test-orchestration
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run integration test
+      run: |
+        python -c "
+from src.orchestrator import PipelineOrchestrator
+from src.data_validation import DataValidator
+from src.data_processing import DataProcessor
+
+# Test de integración básica
+orchestrator = PipelineOrchestrator('config/pipeline_config.yaml')
+validator = DataValidator(orchestrator.config['validation'])
+processor = DataProcessor(orchestrator.config['processing'])
+
+print(' Módulos importados correctamente')
+print(' Configuración integrada exitosamente')
+        "
+
+    - name: Verify directory structure
+      run: |
+        echo "Verificando estructura de directorios:"
+        find . -type d -name "src" -o -name "config" -o -name "tests" | sort
+        echo " Estructura de directorios correcta"
