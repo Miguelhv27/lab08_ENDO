@@ -12,10 +12,10 @@ class TestPipelineOrchestration:
 
     def test_execution_flow_success(self):
         """Test flujo de ejecución exitoso"""
-        with patch('src.data_validation.DataValidator') as mock_validator, \
-             patch('src.data_processing.DataProcessor') as mock_processor, \
-             patch('src.data_enrichment.DataEnricher') as mock_enricher, \
-             patch('src.quality_checks.QualityChecker') as mock_quality:
+        with patch('src.orchestrator.DataValidator') as mock_validator, \
+             patch('src.orchestrator.DataProcessor') as mock_processor, \
+             patch('src.orchestrator.DataEnricher') as mock_enricher, \
+             patch('src.orchestrator.QualityChecker') as mock_quality:
 
             # Configurar mocks para flujo exitoso
             mock_validator.return_value.validate.return_value = {'success': True}
