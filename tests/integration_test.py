@@ -62,13 +62,12 @@ def test_integration():
         assert 'success' in result
         print("    Ejecución completa probada")
         
-        print("\n ¡Todos los tests de integración pasaron!")
-        return True
+        print("\n🎉 ¡Todos los tests de integración pasaron!")
         
     except Exception as e:
         print(f"\n Error en test de integración: {e}")
-        return False
+        raise
 
+# Cambiar el final para evitar el warning
 if __name__ == "__main__":
-    success = test_integration()
-    exit(0 if success else 1)
+    test_integration()
