@@ -38,12 +38,11 @@ jobs:
 
     - name: Validate pipeline configuration
       run: |
-        python -c "
-import yaml
+        python -c "import yaml
 with open('config/pipeline_config.yaml', 'r') as f:
     config = yaml.safe_load(f)
-    print(' Configuración YAML válida')
-    print(f'Versión del pipeline: {config.get(\"version\")}')
+    print('Configuration YAML valid')
+    print(f'Pipeline version: {config.get(\"version\")}')
         "
 
     - name: Dry-run pipeline initialization
@@ -51,8 +50,8 @@ with open('config/pipeline_config.yaml', 'r') as f:
         python -c "
 from src.orchestrator import PipelineOrchestrator
 orchestrator = PipelineOrchestrator('config/pipeline_config.yaml')
-print(' Orquestador inicializado correctamente')
-print(' Configuración cargada exitosamente')
+print('Orchestrator initialized correctly')
+print('Configuration loaded successfully')
         "
 
     - name: Upload coverage reports
@@ -85,17 +84,17 @@ from src.orchestrator import PipelineOrchestrator
 from src.data_validation import DataValidator
 from src.data_processing import DataProcessor
 
-# Test de integración básica
+# Basic integration test
 orchestrator = PipelineOrchestrator('config/pipeline_config.yaml')
 validator = DataValidator(orchestrator.config['validation'])
 processor = DataProcessor(orchestrator.config['processing'])
 
-print(' Módulos importados correctamente')
-print(' Configuración integrada exitosamente')
+print('Modules imported correctly')
+print('Configuration integrated successfully')
         "
 
     - name: Verify directory structure
       run: |
-        echo "Verificando estructura de directorios:"
+        echo "Checking directory structure:"
         find . -type d -name "src" -o -name "config" -o -name "tests" | sort
-        echo " Estructura de directorios correcta"
+        echo "Directory structure correct"
