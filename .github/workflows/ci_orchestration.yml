@@ -42,17 +42,14 @@ jobs:
 with open('config/pipeline_config.yaml', 'r') as f:
     config = yaml.safe_load(f)
     print('Configuration YAML valid')
-    print(f'Pipeline version: {config.get(\"version\")}')
-        "
+    print(f'Pipeline version: {config.get(\"version\")}')"
 
     - name: Dry-run pipeline initialization
       run: |
-        python -c "
-from src.orchestrator import PipelineOrchestrator
+        python -c "from src.orchestrator import PipelineOrchestrator
 orchestrator = PipelineOrchestrator('config/pipeline_config.yaml')
 print('Orchestrator initialized correctly')
-print('Configuration loaded successfully')
-        "
+print('Configuration loaded successfully')"
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -79,19 +76,14 @@ print('Configuration loaded successfully')
 
     - name: Run integration test
       run: |
-        python -c "
-from src.orchestrator import PipelineOrchestrator
+        python -c "from src.orchestrator import PipelineOrchestrator
 from src.data_validation import DataValidator
 from src.data_processing import DataProcessor
-
-# Basic integration test
 orchestrator = PipelineOrchestrator('config/pipeline_config.yaml')
 validator = DataValidator(orchestrator.config['validation'])
 processor = DataProcessor(orchestrator.config['processing'])
-
 print('Modules imported correctly')
-print('Configuration integrated successfully')
-        "
+print('Configuration integrated successfully')"
 
     - name: Verify directory structure
       run: |
