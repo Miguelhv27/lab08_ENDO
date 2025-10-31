@@ -2,10 +2,11 @@ import yaml
 import json
 import logging
 from datetime import datetime
-from src.data_validation import DataValidator
-from src.data_processing import DataProcessor
-from src.data_enrichment import DataEnricher
-from src.quality_checks import QualityChecker
+
+from .data_validation import DataValidator
+from .data_processing import DataProcessor
+from .data_enrichment import DataEnricher
+from .quality_checks import QualityChecker
 
 class PipelineOrchestrator:
     def __init__(self, config_path='config/pipeline_config.yaml'):

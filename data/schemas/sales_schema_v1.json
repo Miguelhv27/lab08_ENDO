@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {"type": "number"},
+    "producto": {"type": "string"},
+    "venta": {"type": "number"},
+    "region": {"type": "string"}
+  },
+  "required": ["id", "producto", "venta"]
+}

@@ -32,6 +32,15 @@ jobs:
       run: |
         echo '{"type": "object", "properties": {"id": {"type": "number"}}}' > data/schemas/sales_schema_v1.json
 
+    - name: Create sample data files
+      run: |
+        mkdir -p data/raw data/reference
+        echo 'id,producto,venta,region,fecha' > data/raw/sales_data.csv
+        echo '1,Laptop,1500,Norte,2025-01-30' >> data/raw/sales_data.csv
+        echo '2,Mouse,50,Sur,2025-01-30' >> data/raw/sales_data.csv
+        echo 'producto,categoria,precio_base' > data/reference/product_catalog.csv
+        echo 'Laptop,Tecnología,1200' >> data/reference/product_catalog.csv
+
     - name: Test orchestration components
       run: |
         python -m pytest tests/ -v
